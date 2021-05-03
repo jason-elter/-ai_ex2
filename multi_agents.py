@@ -1,7 +1,11 @@
 import numpy as np
 import abc
 import util
+import math
 from game import Agent, Action
+
+MAX_PLAYER = EMPTY = 0
+MIN_PLAYER = 1
 
 
 class ReflexAgent(Agent):
@@ -44,16 +48,21 @@ class ReflexAgent(Agent):
         GameStates (GameState.py) and returns a number, where higher numbers are better.
 
         """
-
         # Useful information you can extract from a GameState (game_state.py)
-
         successor_game_state = current_game_state.generate_successor(action=action)
         board = successor_game_state.board
         max_tile = successor_game_state.max_tile
-        score = successor_game_state.score
 
-        "*** YOUR CODE HERE ***"
-        return score
+        # Maximize number of tiles that have a large value.
+        tiles_score = np.sum((board > np.sqrt(max_tile)))
+
+        # Maximize number of empty tiles.
+        empty_tiles_score = np.count_nonzero(board == EMPTY) ** 2
+
+        # Attempt to aggregate high values in one corner.
+        corner_score = (board[0, 0] + (board[0, 1] + board[1, 0]) / 32 + (board[1, 1] / 64)) ** 2
+
+        return (corner_score + empty_tiles_score + tiles_score) / 3
 
 
 def score_evaluation_function(current_game_state):
@@ -109,11 +118,8 @@ class MinmaxAgent(MultiAgentSearchAgent):
         game_state.generate_successor(agent_index, action):
             Returns the successor game state after an agent takes an action
         """
-        """*** YOUR CODE HERE ***"""
         ans = self.minmax_decision(game_state, 0, self.depth)[0]
         return ans
-        # util.raiseNotDefined()
-
 
     def minmax_decision(self, game_state, player, cur_depth):
         if cur_depth == 0:
@@ -146,13 +152,48 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
     Your minimax agent with alpha-beta pruning (question 3)
     """
 
+    # Recursive helper function for alpha-beta pruning. (max move)
+    def __alpha_beta_max_helper(self, state, depth, alpha, beta):
+        if depth == 0 or state.done:
+            return self.evaluation_function(state)
+
+        legal_moves = state.get_legal_actions(MAX_PLAYER)
+        for action in legal_moves:
+            successor = state.generate_successor(MAX_PLAYER, action)
+            alpha = max(alpha, self.__alpha_beta_min_helper(successor, depth - 1, alpha, beta))
+            if beta <= alpha:
+                break
+        return alpha
+
+    # Recursive helper function for alpha-beta pruning. (min move)
+    def __alpha_beta_min_helper(self, state, depth, alpha, beta):
+        if depth == 0 or state.done:
+            return self.evaluation_function(state)
+
+        legal_moves = state.get_legal_actions(MIN_PLAYER)
+        for action in legal_moves:
+            successor = state.generate_successor(MIN_PLAYER, action)
+            beta = min(beta, self.__alpha_beta_max_helper(successor, depth, alpha, beta))
+            if beta <= alpha:
+                break
+        return beta
+
     def get_action(self, game_state):
         """
         Returns the minimax action using self.depth and self.evaluationFunction
         """
-        """*** YOUR CODE HERE ***"""
-        util.raiseNotDefined()
+        max_score = -math.inf
+        max_action = Action.STOP
 
+        # Choose best move according to alpha-beta pruning.
+        legal_moves = game_state.get_legal_actions(MAX_PLAYER)
+        for action in legal_moves:
+            successor = game_state.generate_successor(MAX_PLAYER, action)
+            score = self.__alpha_beta_min_helper(successor, self.depth, -math.inf, math.inf)
+            if score > max_score:
+                max_score, max_action = score, action
+
+        return max_action
 
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
@@ -169,9 +210,6 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         """
         """*** YOUR CODE HERE ***"""
         util.raiseNotDefined()
-
-
-
 
 
 def better_evaluation_function(current_game_state):
