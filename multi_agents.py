@@ -132,16 +132,15 @@ class MinmaxAgent(MultiAgentSearchAgent):
                 return Action.STOP, self.evaluation_function(game_state)
             scores = [self.minmax_decision(game_state.generate_successor(player, action), next_player, cur_depth)[1]
                       for action in legal_moves]
-            best_score = max(scores)
+            best_index = np.argmax(scores)
         else:
             legal_moves = game_state.get_opponent_legal_actions()
             scores = [self.minmax_decision(game_state.generate_successor(player, action), next_player, cur_depth - 1)[1]
                       for action in legal_moves]
-            best_score = min(scores)
+            best_index = np.argmin(scores)
 
-        best_indices = [index for index in range(len(scores)) if scores[index] == best_score]
-        chosen_index = np.random.choice(best_indices)  # Pick randomly among the best
-        return legal_moves[chosen_index], best_score
+        best_score = scores[best_index]
+        return legal_moves[best_index], best_score
 
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
