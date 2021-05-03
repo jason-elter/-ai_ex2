@@ -124,24 +124,21 @@ class MinmaxAgent(MultiAgentSearchAgent):
     def minmax_decision(self, game_state, player, cur_depth):
         if cur_depth == 0:
             return Action.STOP, self.evaluation_function(game_state)
-        if player == 0:
+
+        next_player = 1 - player
+        if player == MAX_PLAYER:
             legal_moves = game_state.get_agent_legal_actions()
             if not legal_moves:
                 return Action.STOP, self.evaluation_function(game_state)
-            next_player = (player + 1) % 2
             scores = [self.minmax_decision(game_state.generate_successor(player, action), next_player, cur_depth)[1]
                       for action in legal_moves]
-
             best_score = max(scores)
-        if player == 1:
+        else:
             legal_moves = game_state.get_opponent_legal_actions()
-            next_player = (player + 1) % 2
             scores = [self.minmax_decision(game_state.generate_successor(player, action), next_player, cur_depth - 1)[1]
                       for action in legal_moves]
             best_score = min(scores)
-        if player > 1:
-            print("non existent player")
-            return None
+
         best_indices = [index for index in range(len(scores)) if scores[index] == best_score]
         chosen_index = np.random.choice(best_indices)  # Pick randomly among the best
         return legal_moves[chosen_index], best_score
