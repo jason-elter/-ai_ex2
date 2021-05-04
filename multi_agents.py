@@ -121,7 +121,7 @@ class MinmaxAgent(MultiAgentSearchAgent):
         game_state.generate_successor(agent_index, action):
             Returns the successor game state after an agent takes an action
         """
-        ans = self.__minmax_decision(game_state, 0, self.depth)[0]
+        ans, _ = self.__minmax_decision(game_state, MAX_PLAYER, (self.depth * 2) - 1)
         return ans
 
     def __minmax_decision(self, game_state, player, cur_depth):
@@ -132,12 +132,15 @@ class MinmaxAgent(MultiAgentSearchAgent):
         if player == MAX_PLAYER:
             legal_moves = game_state.get_agent_legal_actions()
             if not legal_moves:
-                return Action.STOP, self.evaluation_function(game_state)
-            scores = [self.__minmax_decision(game_state.generate_successor(player, action), next_player, cur_depth)[1]
-                      for action in legal_moves]
+                return Action.STOP, -math.inf
+            scores = [
+                self.__minmax_decision(game_state.generate_successor(player, action), next_player, cur_depth - 1)[1]
+                for action in legal_moves]
             best_score = max(scores)
         else:
             legal_moves = game_state.get_opponent_legal_actions()
+            if not legal_moves:
+                return Action.STOP, math.inf
             scores = [
                 self.__minmax_decision(game_state.generate_successor(player, action), next_player, cur_depth - 1)[1]
                 for action in legal_moves]
@@ -210,14 +213,14 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         The opponent should be modeled as choosing uniformly at random from their
         legal moves.
         """
-        """*** YOUR CODE HERE ***"""
         max_score = -math.inf
         max_action = Action.STOP
+        new_depth = self.depth * 2
 
         legal_moves = game_state.get_agent_legal_actions()
         for action in legal_moves:
             successor = game_state.generate_successor(MAX_PLAYER, action)
-            score = self.expectimax_decision(successor, MAX_PLAYER, self.depth)
+            score = self.expectimax_decision(successor, MIN_PLAYER, new_depth - 1)
             if score > max_score:
                 max_score, max_action = score, action
 
@@ -231,16 +234,19 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         if player == MAX_PLAYER:
             legal_moves = game_state.get_agent_legal_actions()
             if not legal_moves:
-                return Action.STOP, self.evaluation_function(game_state)
-            scores = [self.expectimax_decision(game_state.generate_successor(player, action), next_player, cur_depth)
-                      for action in legal_moves]
+                return -math.inf
+            scores = (
+                self.expectimax_decision(game_state.generate_successor(player, action), next_player, cur_depth - 1)
+                for action in legal_moves)
             best_score = max(scores)
         else:
             legal_moves = game_state.get_opponent_legal_actions()
-            scores = [
+            if not legal_moves:
+                return math.inf
+            scores = (
                 self.expectimax_decision(game_state.generate_successor(player, action), next_player, cur_depth - 1)
-                for action in legal_moves]
-            best_score = sum(scores) / len(scores)
+                for action in legal_moves)
+            best_score = sum(scores) / len(legal_moves)
 
         return best_score
 
