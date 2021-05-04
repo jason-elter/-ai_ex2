@@ -138,8 +138,9 @@ class MinmaxAgent(MultiAgentSearchAgent):
             best_score = max(scores)
         else:
             legal_moves = game_state.get_opponent_legal_actions()
-            scores = [self.__minmax_decision(game_state.generate_successor(player, action), next_player, cur_depth - 1)[1]
-                      for action in legal_moves]
+            scores = [
+                self.__minmax_decision(game_state.generate_successor(player, action), next_player, cur_depth - 1)[1]
+                for action in legal_moves]
             best_score = min(scores)
 
         best_indices = [index for index in range(len(scores)) if scores[index] == best_score]
@@ -173,7 +174,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         legal_moves = state.get_legal_actions(MIN_PLAYER)
         for action in legal_moves:
             successor = state.generate_successor(MIN_PLAYER, action)
-            beta = min(beta, self.__alpha_beta_max_helper(successor, depth, alpha, beta))
+            beta = min(beta, self.__alpha_beta_max_helper(successor, depth - 1, alpha, beta))
             if beta <= alpha:
                 break
         return beta
@@ -184,12 +185,13 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         """
         max_score = -math.inf
         max_action = Action.STOP
+        new_depth = self.depth * 2
 
         # Choose best move according to alpha-beta pruning.
         legal_moves = game_state.get_legal_actions(MAX_PLAYER)
         for action in legal_moves:
             successor = game_state.generate_successor(MAX_PLAYER, action)
-            score = self.__alpha_beta_min_helper(successor, self.depth, -math.inf, math.inf)
+            score = self.__alpha_beta_min_helper(successor, new_depth - 1, -math.inf, math.inf)
             if score > max_score:
                 max_score, max_action = score, action
 
@@ -235,8 +237,9 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
             best_score = max(scores)
         else:
             legal_moves = game_state.get_opponent_legal_actions()
-            scores = [self.expectimax_decision(game_state.generate_successor(player, action), next_player, cur_depth - 1)
-                      for action in legal_moves]
+            scores = [
+                self.expectimax_decision(game_state.generate_successor(player, action), next_player, cur_depth - 1)
+                for action in legal_moves]
             best_score = sum(scores) / len(scores)
 
         return best_score
