@@ -121,7 +121,7 @@ class MinmaxAgent(MultiAgentSearchAgent):
         game_state.generate_successor(agent_index, action):
             Returns the successor game state after an agent takes an action
         """
-        ans, _ = self.__minmax_decision(game_state, MAX_PLAYER, (self.depth * 2) - 1)
+        ans, _ = self.__minmax_decision(game_state, MAX_PLAYER, self.depth * 2)
         return ans
 
     def __minmax_decision(self, game_state, player, cur_depth):
