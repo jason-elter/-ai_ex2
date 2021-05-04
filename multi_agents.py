@@ -6,6 +6,9 @@ from game import Agent, Action
 
 MAX_PLAYER = EMPTY = 0
 MIN_PLAYER = 1
+EMPTY_TILES_WEIGHT = 200
+NUM_PAIRS_WEIGHT = 0.5
+MAX_TILE_WEIGHT = 10
 
 
 class ReflexAgent(Agent):
@@ -214,8 +217,28 @@ def better_evaluation_function(current_game_state):
 
     DESCRIPTION: <write something here so we know what you did>
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    max_tile = current_game_state.max_tile
+    board = current_game_state.board
+
+    # Maximize number of empty tiles.
+    empty_tiles_score = np.count_nonzero(board == EMPTY)
+
+    # View one tile shifted versions of the board and cuts of the board that we can compare to.
+    shift_left = board[:, 1:]
+    cut_left = board[:, :-1]
+    shift_down = board[1:, :]
+    cut_down = board[:-1, :]
+
+    # Maximize number of pairs that can be combined. (Bigger value pairs are better)
+    num_horizontal_pairs = np.sum((cut_left == shift_left) * cut_left)
+    num_vertical_pairs = np.sum((cut_down == shift_down) * cut_down)
+    num_pairs_score = num_horizontal_pairs + num_vertical_pairs
+
+    # Weight different scores for final result.
+    score = empty_tiles_score * EMPTY_TILES_WEIGHT + \
+        num_pairs_score * NUM_PAIRS_WEIGHT + \
+        max_tile * MAX_TILE_WEIGHT
+    return score
 
 
 # Abbreviation
