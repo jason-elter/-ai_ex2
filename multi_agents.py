@@ -121,20 +121,31 @@ class MinmaxAgent(MultiAgentSearchAgent):
         game_state.generate_successor(agent_index, action):
             Returns the successor game state after an agent takes an action
         """
-        ans, _ = self.__minmax_decision(game_state, MAX_PLAYER, self.depth * 2)
-        return ans
+        max_score = -math.inf
+        max_action = Action.STOP
+        new_depth = self.depth * 2
+
+        # Choose best move according to alpha-beta pruning.
+        legal_moves = game_state.get_legal_actions(MAX_PLAYER)
+        for action in legal_moves:
+            successor = game_state.generate_successor(MAX_PLAYER, action)
+            score = self.__minmax_decision(successor, MIN_PLAYER, new_depth - 1)
+            if score > max_score:
+                max_score, max_action = score, action
+
+        return max_action
 
     def __minmax_decision(self, game_state, player, cur_depth):
         if cur_depth == 0 or game_state.done:
-            return Action.STOP, self.evaluation_function(game_state)
+            return self.evaluation_function(game_state)
 
         next_player = 1 - player
         if player == MAX_PLAYER:
             legal_moves = game_state.get_agent_legal_actions()
             if not legal_moves:
-                return Action.STOP, -math.inf
+                return -math.inf
             scores = [
-                self.__minmax_decision(game_state.generate_successor(player, action), next_player, cur_depth - 1)[1]
+                self.__minmax_decision(game_state.generate_successor(player, action), next_player, cur_depth - 1)
                 for action in legal_moves]
             best_score = max(scores)
         else:
@@ -142,13 +153,10 @@ class MinmaxAgent(MultiAgentSearchAgent):
             if not legal_moves:
                 return Action.STOP, math.inf
             scores = [
-                self.__minmax_decision(game_state.generate_successor(player, action), next_player, cur_depth - 1)[1]
+                self.__minmax_decision(game_state.generate_successor(player, action), next_player, cur_depth - 1)
                 for action in legal_moves]
             best_score = min(scores)
-
-        best_indices = [index for index in range(len(scores)) if scores[index] == best_score]
-        chosen_index = np.random.choice(best_indices)  # Pick randomly among the best
-        return legal_moves[chosen_index], best_score
+        return best_score
 
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
