@@ -125,7 +125,7 @@ class MinmaxAgent(MultiAgentSearchAgent):
         max_action = Action.STOP
         new_depth = self.depth * 2
 
-        # Choose best move according to alpha-beta pruning.
+        # Choose best move according to minmax.
         legal_moves = game_state.get_legal_actions(MAX_PLAYER)
         for action in legal_moves:
             successor = game_state.generate_successor(MAX_PLAYER, action)
@@ -144,18 +144,19 @@ class MinmaxAgent(MultiAgentSearchAgent):
             legal_moves = game_state.get_agent_legal_actions()
             if not legal_moves:
                 return -math.inf
-            scores = [
+            scores = (
                 self.__minmax_decision(game_state.generate_successor(player, action), next_player, cur_depth - 1)
-                for action in legal_moves]
+                for action in legal_moves)
             best_score = max(scores)
         else:
             legal_moves = game_state.get_opponent_legal_actions()
             if not legal_moves:
-                return Action.STOP, math.inf
-            scores = [
+                return math.inf
+            scores = (
                 self.__minmax_decision(game_state.generate_successor(player, action), next_player, cur_depth - 1)
-                for action in legal_moves]
+                for action in legal_moves)
             best_score = min(scores)
+
         return best_score
 
 
@@ -228,13 +229,13 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         legal_moves = game_state.get_agent_legal_actions()
         for action in legal_moves:
             successor = game_state.generate_successor(MAX_PLAYER, action)
-            score = self.expectimax_decision(successor, MIN_PLAYER, new_depth - 1)
+            score = self.__expectimax_decision(successor, MIN_PLAYER, new_depth - 1)
             if score > max_score:
                 max_score, max_action = score, action
 
         return max_action
 
-    def expectimax_decision(self, game_state, player, cur_depth):
+    def __expectimax_decision(self, game_state, player, cur_depth):
         if cur_depth == 0 or game_state.done:
             return self.evaluation_function(game_state)
 
@@ -244,7 +245,7 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
             if not legal_moves:
                 return -math.inf
             scores = (
-                self.expectimax_decision(game_state.generate_successor(player, action), next_player, cur_depth - 1)
+                self.__expectimax_decision(game_state.generate_successor(player, action), next_player, cur_depth - 1)
                 for action in legal_moves)
             best_score = max(scores)
         else:
@@ -252,7 +253,7 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
             if not legal_moves:
                 return math.inf
             scores = (
-                self.expectimax_decision(game_state.generate_successor(player, action), next_player, cur_depth - 1)
+                self.__expectimax_decision(game_state.generate_successor(player, action), next_player, cur_depth - 1)
                 for action in legal_moves)
             best_score = sum(scores) / len(legal_moves)
 
@@ -263,7 +264,14 @@ def better_evaluation_function(current_game_state):
     """
     Your extreme 2048 evaluation function (question 5).
 
-    DESCRIPTION: <write something here so we know what you did>
+    DESCRIPTION:
+    This function evaluates a state using a weighted sum of three features:
+    1. The number of empty tiles on the current board.
+    2. The number of possible pairs that can be merged on the board- adjacent same numbered pairs are counted
+        (diagonal pairs aren't counted since they can't be merged) and a higher weight in the sum is given to
+        larger numbers pairs.
+    3. The value of the max numbered tile on the board.
+    The higher the score of these features the better the state.
     """
     max_tile = current_game_state.max_tile
     board = current_game_state.board
