@@ -8,6 +8,7 @@ MAX_PLAYER = EMPTY = 0
 MIN_PLAYER = 1
 EMPTY_TILES_WEIGHT = 200
 NUM_PAIRS_WEIGHT = 0.5
+MONOTONICITY_WEIGHT = -0.5
 MAX_TILE_WEIGHT = 10
 
 
@@ -265,13 +266,15 @@ def better_evaluation_function(current_game_state):
     Your extreme 2048 evaluation function (question 5).
 
     DESCRIPTION:
-    This function evaluates a state using a weighted sum of three features:
+    This function evaluates a state using a weighted sum of four features:
     1. The number of empty tiles on the current board.
     2. The number of possible pairs that can be merged on the board- adjacent same numbered pairs are counted
         (diagonal pairs aren't counted since they can't be merged) and a higher weight in the sum is given to
         larger numbers pairs.
-    3. The value of the max numbered tile on the board.
-    The higher the score of these features the better the state.
+    3. How monotone each row and each column are- a penalty is applied so that board with more monotonicity
+        in a certain direction (left/right and up/down) get a higher score.
+    4. The value of the max numbered tile on the board.
+    The higher the score of these features the better the state (except monotonicity which is negative).
     """
     max_tile = current_game_state.max_tile
     board = current_game_state.board
@@ -290,9 +293,24 @@ def better_evaluation_function(current_game_state):
     num_vertical_pairs = np.sum((cut_down == shift_down) * cut_down)
     num_pairs_score = num_horizontal_pairs + num_vertical_pairs
 
+    # Maximize monotonicity of rows and columns. (because 2, 4, 8, 16 is probably better than 4, 8, 2, 16)
+    # Find difference between every two adjacent tiles.
+    horizontal_difference = shift_left - cut_left
+    vertical_difference = shift_down - cut_down
+    horizontal_flag = horizontal_difference > 0
+    vertical_flag = vertical_difference > 0
+
+    # Find direction with best monotonicity
+    horizontal_monotonicity = min(np.sum(horizontal_flag * horizontal_difference),
+                                  np.sum((~horizontal_flag) * -horizontal_difference))
+    vertical_monotonicity = min(np.sum(vertical_flag * vertical_difference),
+                                np.sum((~vertical_flag) * -vertical_difference))
+    monotonicity_score = (horizontal_monotonicity + vertical_monotonicity) / max_tile
+
     # Weight different scores for final result.
     score = empty_tiles_score * EMPTY_TILES_WEIGHT + \
         num_pairs_score * NUM_PAIRS_WEIGHT + \
+        monotonicity_score * MONOTONICITY_WEIGHT + \
         max_tile * MAX_TILE_WEIGHT
     return score
 
